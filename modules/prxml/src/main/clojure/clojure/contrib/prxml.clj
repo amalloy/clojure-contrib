@@ -30,17 +30,17 @@ for details."}
   (:use [clojure.string :only [escape]]))
 
 (def
- ^{:doc "If true, empty tags will have a space before the closing />"}
+ ^{:doc "If true, empty tags will have a space before the closing />"
+   :dynamic true}
  *html-compatible* false)
 
 (def
  ^{:doc "The number of spaces to indent sub-tags.  nil for no indent
-  and no extra line-breaks."}
+  and no extra line-breaks."
+   :dynamic true}
  *prxml-indent* nil)
 
-(def ^{:private true} *prxml-tag-depth* 0)
-
-(def ^{:private true} print-xml)  ; forward declaration
+(def ^{:private true :dynamic true} *prxml-tag-depth* 0)
 
 (defn- escape-xml [s]
   (escape s {\< "&lt;"
@@ -62,6 +62,12 @@ for details."}
   (print (escape-xml (str value)))
   (print "\""))
 
+(defn- add-whitespace []
+  (when *prxml-indent*
+    (newline)
+    (dotimes [_ (* *prxml-tag-depth* *prxml-indent*)] (print " "))))
+
+(defmulti ^{:private true} print-xml class)
 (defmulti ^{:private true} print-xml-tag (fn [tag attrs content] tag))
 
 (defmethod print-xml-tag :raw! [tag attrs contents]
@@ -99,9 +105,7 @@ for details."}
 
 (defmethod print-xml-tag :default [tag attrs contents]
   (let [tag-name (as-str tag)]
-    (when *prxml-indent*
-      (newline)
-      (dotimes [n (* *prxml-tag-depth* *prxml-indent*)] (print " ")))
+    (add-whitespace)
     (print "<")
     (print tag-name)
     (doseq [[name value] attrs]
@@ -116,15 +120,10 @@ for details."}
           ;; tag contains sub-tags:
           (do (binding [*prxml-tag-depth* (inc *prxml-tag-depth*)]
                 (doseq [c contents] (print-xml c)))
-              (when *prxml-indent*
-                (newline)
-                (dotimes [n (* *prxml-tag-depth* *prxml-indent*)] (print " ")))
+              (add-whitespace)
               (print "</") (print tag-name) (print ">"))))
       ;; empty tag:
       (print (if *html-compatible* " />" "/>")))))
-
-
-(defmulti ^{:private true} print-xml class)
 
 (defmethod print-xml clojure.lang.IPersistentVector [x]
   (let [[tag & contents] x
