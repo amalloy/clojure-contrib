@@ -27,7 +27,7 @@
      :doc "Compact syntax for generating XML. See the documentation of \"prxml\" 
 for details."}
   clojure.contrib.prxml
-  (:use [clojure.string :only (escape)]))
+  (:use [clojure.string :only [escape]]))
 
 (def
  ^{:doc "If true, empty tags will have a space before the closing />"}
@@ -73,17 +73,17 @@ for details."}
   (print " -->"))
 
 (defmethod print-xml-tag :decl! [tag attrs contents]
-  (let [attrs (merge {:version "1.0" :encoding "UTF-8"}
-                     attrs)]
+  (let [{:keys [version encoding standalone]
+         :or {version "1.0" encoding "UTF-8"}} attrs]
     ;; Must enforce ordering of pseudo-attributes:
     (print "<?xml version=\"")
-    (print (:version attrs))
+    (print version)
     (print "\" encoding=\"")
-    (print (:encoding attrs))
+    (print encoding)
     (print "\"")
-    (when (:standalone attrs)
+    (when standalone
       (print " standalone=\"")
-      (print (:standalone attrs))
+      (print standalone)
       (print "\""))
     (print "?>")))
 
