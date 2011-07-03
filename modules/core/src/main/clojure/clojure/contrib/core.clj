@@ -21,11 +21,13 @@
 
 (defmacro- defnilsafe [docstring non-safe-name nil-safe-name]
   `(defmacro ~nil-safe-name ~docstring
-     {:arglists '([~'x ~'form] [~'x ~'form ~'& ~'forms])}
-	   ([x# form#]
-	     `(let [~'i# ~x#] (when-not (nil? ~'i#) (~'~non-safe-name ~'i# ~form#))))
-  	 ([x# form# & more#]
-	     `(~'~nil-safe-name (~'~nil-safe-name ~x# ~form#) ~@more#))))
+     {:arglists '~'([x form] [x form & forms])}
+     ([x# form#]
+        (let [n# #'~non-safe-name]
+          `(let [~'i# ~x#] (when-not (nil? ~'i#) (~n# ~'i# ~form#)))))
+     ([x# form# & more#]
+        (let [n# #'~nil-safe-name]
+          `(~n# (~n# ~x# ~form#) ~@more#)))))
        
 (defnilsafe 
   "Same as clojure.core/-> but returns nil as soon as the threaded value is nil itself (thus short-circuiting any pending computation).
